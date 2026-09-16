@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>DJMAX Style Smooth Game (FAST/SLOW Added)</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0b0b16;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background-color: #0f0f1e;
+            border: 4px solid #3a3a55;
+            box-shadow: 0 0 20px rgba(0, 255, 240, 0.2);
+        }
+        canvas {
+            display: block;
+        }
+        #ui-info {
+            margin-top: 10px;
+            font-size: 15px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .speed-btn {
+            background: #252538;
+            color: white;
+            border: 1px solid #4e4e75;
+            padding: 5px 12px;
+            cursor: pointer;
+            margin: 0 5px;
+            border-radius: 4px;
+        }
+        .speed-btn:hover { background: #3b3b5c; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+    </div>
+
+    <div id="ui-info">
+        <div>배속 조절: 
+            <button class="speed-btn" onclick="adjustSpeed(-0.5)">-0.5</button>
+            <span id="speed-text">4.0</span>x
+            <button class="speed-btn" onclick="adjustSpeed(0.5)">+0.5</button>
+        </div>
+        <div>판정선 싱크 보정 (방향키 <kbd>←</kbd> <kbd>→</kbd>): <strong id="sync-text" style="color: #ffcc00;">0ms</strong></div>
+        <p>게임 시작: <strong style="color: #00fff0;">스페이스바(Space)</strong> | 조작키: <strong>D F J K</strong></p>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- 게임 설정 및 디맥 판정선 범위 ---
+let speed = 4.0; 
+let audioOffset = 0; 
+const JUDGMENT_LINE_Y = 520; 
+const NOTE_HEIGHT = 18;
+const LANE_WIDTH = 100;
+const KEYS = ['d', 'f', 'j', 'k'];
+const LANE_COLORS = ['#ff4b5c', '#00fff0', '#00fff0', '#ff4b5c'];
+
+// --- [디맥 사양] 판정 테이블 ---
+const JUDGE_WINDOWS = [
+    { ms: 42,  name: "MAX 100%", color: "#00fff0", rate: 1.0 },
+    { ms: 55,  name: "MAX 90%",  color: "#00ff66", rate: 0.9 },
+    { ms: 68,  name: "MAX 80%",  color: "#22ff44", rate: 0.8 },
+    { ms: 80,  name: "MAX 70%",  color: "#66ff22", rate: 0.7 },
+    { ms: 95,  name: "MAX 50%",  color: "#ffcc00", rate: 0.5 },
+    { ms: 115, name: "MAX 40%",  color: "#ffaa00", rate: 0.4 },
+    { ms: 135, name: "MAX 30%",  color: "#ff8800", rate: 0.3 },
+    { ms: 160, name: "MAX 10%",  color: "#ff4400", rate: 0.1 },
+    { ms: 200, name: "MAX 1%",   color: "#ff2200", rate: 0.01 }
+];
+const BREAK_WINDOW = 220; 
+
+// --- 게임 상태 변수 ---
+let isPlaying = false;
+let startTime = 0;
+let score = 0;
+let totalNotesHit = 0; 
+let totalRateScore = 0; 
+let combo = 0;
+let maxCombo = 0;
+
+// 판정 및 FAST / SLOW 세부 데이터 상태
+let lastJudgment = "";
+let judgmentColor = "white";
+let lastTimingType = ""; // "FAST", "SLOW", "" 값 저장용
+let timingColor = "white";
+
+// 키 입력 상태 및 이펙트 애니메이션 카운터
+let keyState = { d: false, f: false, j: false, k: false };
+let laneEffect = { d: 0, f: 0, j: 0, k: 0 }; 
+
+// --- 채보 데이터 (2키 제한 딜루전 16비트 고속 계단) ---
+const chart = [
+    { time: 1000, lane: 0 }, { time: 1000, lane: 3 },
+    { time: 1500, lane: 1 }, { time: 1500, lane: 2 },
+    { time: 2000, lane: 0 }, { time: 2300, lane: 1 },
+    { time: 2600, lane: 2 }, { time: 2900, lane: 3 },
+    { time: 3500, lane: 0 }, { time: 3500, lane: 2 },
+    { time: 4000, lane: 1 }, { time: 4000, lane: 3 },
+
+    // 고속 16비트 계단 (BPM 180 기준)
+    { time: 5000, lane: 0 }, { time: 5083, lane: 1 }, { time: 5166, lane: 2 }, { time: 5250, lane: 3 },
+    { time: 5333, lane: 2 }, { time: 5416, lane: 1 }, { time: 5500, lane: 0 }, { time: 5583, lane: 1 },
+    { time: 5666, lane: 2 }, { time: 5750, lane: 3 }, { time: 5833, lane: 2 }, { time: 5916, lane: 1 },
+    
+    // 지력 복합 꼬임 계단
+    { time: 6000, lane: 0 }, { time: 6083, lane: 2 }, { time: 6166, lane: 1 }, { time: 6250, lane: 3 },
+    { time: 6333, lane: 0 }, { time: 6416, lane: 2 }, { time: 6500, lane: 1 }, { time: 6583, lane: 3 },
+    
+    { time: 6700, lane: 0 }, { time: 6783, lane: 1 }, { time: 6866, lane: 2 }, { time: 6950, lane: 3 },
+    { time: 7100, lane: 0 }, { time: 7100, lane: 3 }
+];
+
+let playNotes = [];
+
+function startGame() {
+    playNotes = chart.map(note => ({ ...note, hit: false }));
+    score = 0;
+    totalNotesHit = 0;
+    totalRateScore = 0;
+    combo = 0;
+    maxCombo = 0;
+    lastJudgment = "START!";
+    judgmentColor = "#00fff0";
+    lastTimingType = "";
+    isPlaying = true;
+    startTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+function adjustSpeed(amount) {
+    speed = Math.max(1.0, Math.min(9.0, speed + amount));
+    document.getElementById('speed-text').innerText = speed.toFixed(1);
+}
+
+function adjustOffset(amount) {
+    audioOffset += amount;
+    document.getElementById('sync-text').innerText = (audioOffset > 0 ? "+" : "") + audioOffset + "ms";
+}
+
+// --- 메인 게임 루프 ---
+function gameLoop(timestamp) {
+    if (!isPlaying) return;
+
+    const currentTime = (timestamp - startTime) + audioOffset;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. 레인 배경 및 이펙트 렌더링
+    for (let i = 0; i < 4; i++) {
+        const key = KEYS[i];
+        
+        ctx.fillStyle = keyState[key] ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(i * LANE_WIDTH, 0, LANE_WIDTH, canvas.height);
+        
+        if (laneEffect[key] > 0) {
+            let gradient = ctx.createLinearGradient(0, JUDGMENT_LINE_Y, 0, 200);
+            gradient.addColorStop(0, `rgba(0, 255, 240, ${laneEffect[key] * 0.4})`);
+            gradient.addColorStop(1, 'rgba(0, 255, 240, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(i * LANE_WIDTH, 200, LANE_WIDTH, JUDGMENT_LINE_Y - 200);
+            
+            laneEffect[key] -= 0.05; 
+        }
+
+        ctx.strokeStyle = '#22223b';
+        ctx.beginPath();
+        ctx.moveTo(i * LANE_WIDTH, 0);
+        ctx.lineTo(i * LANE_WIDTH, canvas.height);
+        ctx.stroke();
+    }
+
+    // 2. 판정선 디자인
+    ctx.fillStyle = '#3a3a55';
+    ctx.fillRect(0, JUDGMENT_LINE_Y, canvas.width, 6);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, JUDGMENT_LINE_Y + 1, canvas.width, 3);
+
+    // 3. 노트 업데이트
+    playNotes.forEach(note => {
+        if (note.hit) return;
+
+        const timeDiff = note.time - currentTime;
+        const y = JUDGMENT_LINE_Y - (timeDiff * 0.15 * speed);
+
+        if (y > -NOTE_HEIGHT && y < canvas.height) {
+            ctx.fillStyle = LANE_COLORS[note.lane];
+            ctx.fillRect(note.lane * LANE_WIDTH + 6, y, LANE_WIDTH - 12, NOTE_HEIGHT);
+            ctx.fillStyle = '#ffffff'; 
+            ctx.fillRect(note.lane * LANE_WIDTH + 14, y + 4, LANE_WIDTH - 28, NOTE_HEIGHT - 8);
+        }
+
+        if (timeDiff < -BREAK_WINDOW) {
+            note.hit = true;
+            combo = 0;
+            totalNotesHit++;
+            lastJudgment = "BREAK";
+            judgmentColor = "#ff0000";
+            lastTimingType = ""; // BREAK는 패스트 슬로우 미표시
+        }
+    });
+
+    // 4. UI 및 텍스트 렌더링
+    ctx.fillStyle = '#8b8baf';
+    ctx.font = '14px Arial';
+    ctx.fillText(`SCORE: ${score}`, 20, 40);
+    ctx.fillText(`MAX COMBO: ${maxCombo}`, 20, 65);
+
+    const currentRate = totalNotesHit > 0 ? ((totalRateScore / totalNotesHit) * 100).toFixed(2) : "100.00";
+    ctx.fillStyle = '#00fff0';
+    ctx.fillText(`RATE: ${currentRate}%`, 20, 90);
+
+    if (combo > 0) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#00fff0';
+        ctx.shadowBlur = 10;
+        ctx.fillText(combo, canvas.width / 2, 220);
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillText("COMBO", canvas.width / 2, 245);
+        ctx.shadowBlur = 0; 
+    }
+
+    // 판정 메인 텍스트와 FAST / SLOW 통합 그리기
+    if (lastJudgment) {
+        ctx.textAlign = 'center';
+        
+        // FAST/SLOW 표기가 필요하면 판정 텍스트를 살짝 밀고 나란히 배치
+        if (lastTimingType !== "") {
+            ctx.fillStyle = judgmentColor;
+            ctx.font = 'bold 28px Arial';
+            ctx.fillText(lastJudgment, canvas.width / 2 - 35, 290);
+            
+            ctx.fillStyle = timingColor;
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(lastTimingType, canvas.width / 2 + 55, 288);
+        } else {
+            // MAX 100% 나 BREAK 일 때는 중앙에 단독 표시
+            ctx.fillStyle = judgmentColor;
+            ctx.font = 'bold 28px Arial';
+            ctx.fillText(lastJudgment, canvas.width / 2, 290);
+        }
+    }
+    ctx.textAlign = 'left';
+
+    // 종료 조건
+    if (playNotes.every(note => note.hit)) {
+        isPlaying = false;
+        ctx.fillStyle = '#00fff0';
+        ctx.font = 'bold 30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("STAGE CLEAR", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = '20px Arial';
+        ctx.fillText(`최종 정확도: ${currentRate}%`, canvas.width / 2, canvas.height / 2 + 20);
+        ctx.textAlign = 'left';
+        return;
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// --- 키 입력 이벤트 핸들러 ---
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { adjustOffset(-5); return; }
+    if (e.key === 'ArrowRight') { adjustOffset(5); return; }
+
+    const key = e.key.toLowerCase();
+    if (key === ' ') {
+        if (!isPlaying) startGame();
+        return;
+    }
+
+    if (!KEYS.includes(key) || keyState[key]) return;
+    keyState[key] = true;
+
+    if (!isPlaying) return;
+
+    const rawInputTime = performance.now() - startTime;
+    const inputTime = rawInputTime + audioOffset;
+    const targetLane = KEYS.indexOf(key);
+
+    let targetNote = null;
+    let minDiff = Infinity;
+    let rawDiffSign = 0; // FAST/SLOW 정밀 판정용 부호 변수
+
