@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>DJMAX Style Web Rhythm Game</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background-color: #1a1a2e;
+            border: 4px solid #444;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-info {
+            margin-top: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .speed-btn {
+            background: #333;
+            color: white;
+            border: 1px solid #666;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+    </div>
+
+    <div id="ui-info">
+        <div>배속 조절: 
+            <button class="speed-btn" onclick="adjustSpeed(-0.5)">-0.5</button>
+            <span id="speed-text">4.0</span>x
+            <button class="speed-btn" onclick="adjustSpeed(0.5)">+0.5</button>
+        </div>
+        <p>게임 시작: <strong style="color: #00fff0;">스페이스바(Space)</strong> | 조작키: <strong>D F J K</strong></p>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- 게임 설정 및 디맥 판정선 범위 (밀리초) ---
+let speed = 4.0; 
+const JUDGMENT_LINE_Y = 520; // 판정선 위치 (Y좌표)
+const NOTE_HEIGHT = 20;
+const LANE_WIDTH = 100;
+const KEYS = ['d', 'f', 'j', 'k'];
+const LANE_COLORS = ['#ff4b5c', '#00fff0', '#00fff0', '#ff4b5c'];
+
+// 판정 타이밍 (디맥 기준 오차 밀리초)
+const JUDGE_MS = {
+    MAX100: 42,
+    MAX90: 75,
+    MAX50: 120
+};
+
+// --- 게임 상태 변수 ---
+let isPlaying = false;
+let startTime = 0;
+let score = 0;
+let combo = 0;
+let maxCombo = 0;
+let lastJudgment = "";
+let judgmentColor = "white";
+let keyState = { d: false, f: false, j: false, k: false };
+
+// --- 채보 데이터 (Delusion SC 14 기반 - 2키 동치 제한 및 고속 계단) ---
+// time: 판정선에 도달해야 하는 절대 시간 (ms)
+const chart = [
+    // [초반] 2동치 제한 빌드업 (동시치기는 무조건 2개 이하)
+    { time: 1000, lane: 0 }, { time: 1000, lane: 3 },
+    { time: 1500, lane: 1 }, { time: 1500, lane: 2 },
+    { time: 2000, lane: 0 }, { time: 2300, lane: 1 },
+    { time: 2600, lane: 2 }, { time: 2900, lane: 3 },
+    
+    // [중반] 징검다리 난타 및 폭타 전조
+    { time: 3500, lane: 0 }, { time: 3500, lane: 2 },
+    { time: 4000, lane: 1 }, { time: 4000, lane: 3 },
+
+    // [후반] Delusion 스타일 피아노 16비트 초고속 단선 무한 계단 (BPM 180 기준 약 83ms 간격)
+    { time: 5000, lane: 0 }, { time: 5083, lane: 1 }, { time: 5166, lane: 2 }, { time: 5250, lane: 3 },
+    { time: 5333, lane: 2 }, { time: 5416, lane: 1 }, { time: 5500, lane: 0 }, { time: 5583, lane: 1 },
+    { time: 5666, lane: 2 }, { time: 5750, lane: 3 }, { time: 5833, lane: 2 }, { time: 5916, lane: 1 },
+    
+    // 계단 중간 뒤틀기 (지력 요구 패턴)
+    { time: 6000, lane: 0 }, { time: 6083, lane: 2 }, { time: 6166, lane: 1 }, { time: 6250, lane: 3 },
+    { time: 6333, lane: 0 }, { time: 6416, lane: 2 }, { time: 6500, lane: 1 }, { time: 6583, lane: 3 },
+    
+    // 왕복 계단 마무리 후 2동치 피날레
+    { time: 6700, lane: 0 }, { time: 6783, lane: 1 }, { time: 6866, lane: 2 }, { time: 6950, lane: 3 },
+    { time: 7100, lane: 0 }, { time: 7100, lane: 3 }
+];
+
+// 복사본 생성하여 게임에 사용 (노트 입력 처리 후 제거용)
+let playNotes = [];
+
+function startGame() {
+    playNotes = chart.map(note => ({ ...note, hit: false }));
+    score = 0;
+    combo = 0;
+    maxCombo = 0;
+    lastJudgment = "START!";
+    judgmentColor = "#00fff0";
+    isPlaying = true;
+    startTime = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+function adjustSpeed(amount) {
+    speed = Math.max(1.0, Math.min(9.0, speed + amount));
+    document.getElementById('speed-text').innerText = speed.toFixed(1);
+}
+
+// --- 메인 게임 루프 ---
+function gameLoop(timestamp) {
+    if (!isPlaying) return;
+
+    const currentTime = timestamp - startTime;
+
+    // 1. 화면 초기화
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 2. 레인 백그라운드 & 키 누름 이펙트 그리기
+    for (let i = 0; i < 4; i++) {
+        ctx.fillStyle = keyState[KEYS[i]] ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(i * LANE_WIDTH, 0, LANE_WIDTH, canvas.height);
+        
+        // 레인 구분선
+        ctx.strokeStyle = '#333';
+        ctx.beginPath();
+        ctx.moveTo(i * LANE_WIDTH, 0);
+        ctx.lineTo(i * LANE_WIDTH, canvas.height);
+        ctx.stroke();
+    }
+
+    // 3. 디맥 스타일 판정선 그리기
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, JUDGMENT_LINE_Y, canvas.width, 4);
+
+    // 4. 노트 렌더링 및 이탈(MISS) 처리
+    playNotes.forEach(note => {
+        if (note.hit) return;
+
+        // [디맥 핵심 배속 공식 적용]
+        // Y = 판정선위치 - ((노트타겟시간 - 현재시간) * 속도상수 * 설정배속)
+        const timeDiff = note.time - currentTime;
+        const y = JUDGMENT_LINE_Y - (timeDiff * 0.15 * speed);
+
+        // 화면 안에 있을 때만 그리기
+        if (y > -NOTE_HEIGHT && y < canvas.height) {
+            ctx.fillStyle = LANE_COLORS[note.lane];
+            ctx.fillRect(note.lane * LANE_WIDTH + 5, y, LANE_WIDTH - 10, NOTE_HEIGHT);
+        }
+
+        // 판정선을 한참 지나쳐서 오차가 120ms(MAX50 범위)를 넘어가면 BREAK(MISS) 처리
+        if (timeDiff < -JUDGE_MS.MAX50) {
+            note.hit = true;
+            combo = 0;
+            lastJudgment = "BREAK";
+            judgmentColor = "#ff0000";
+        }
+    });
+
+    // 5. UI 정보 출력 (점수, 콤보, 판정)
+    ctx.fillStyle = 'white';
+    ctx.font = '20px Arial';
+    ctx.fillText(`SCORE: ${score}`, 20, 40);
+    ctx.fillText(`MAX COMBO: ${maxCombo}`, 20, 70);
+
+    if (combo > 0) {
+        ctx.fillStyle = '#ffcc00';
+        ctx.font = 'bold 30px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${combo} COMBO`, canvas.width / 2, 250);
+    }
+
+    ctx.fillStyle = judgmentColor;
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(lastJudgment, canvas.width / 2, 300);
+    ctx.textAlign = 'left'; // 원상복구
+
+    // 게임 종료 조건 확인 (모든 노트 처리 완료 시)
+    if (playNotes.every(note => note.hit)) {
+        isPlaying = false;
+        ctx.fillStyle = '#00fff0';
+        ctx.font = '30px Arial';
+        ctx.fillText("STAGE CLEAR", canvas.width / 2 - 100, canvas.height / 2);
+        return;
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+// --- 키보드 입력 처리 및 판정 로직 ---
+window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    
+    if (key === ' ') {
+        if (!isPlaying) startGame();
+        return;
+    }
+
+    if (!KEYS.includes(key) || keyState[key]) return;
+    keyState[key] = true; // 키 누름 상태 저장
+
+    if (!isPlaying) return;
+
+    const inputTime = performance.now() - startTime;
+    const targetLane = KEYS.indexOf(key);
+
+    // 해당 레인에서 가장 먼저 눌려야 할 노트를 찾음
+    let targetNote = null;
+    let minDiff = Infinity;
+
+    playNotes.forEach(note => {
+        if (note.hit || note.lane !== targetLane) return;
+        const diff = Math.abs(note.time - inputTime);
+        if (diff < minDiff) {
+            minDiff = diff;
+            targetNote = note;
+        }
+    });
+
+    // 판정선 근처에 노트가 있는 경우 판정 계산 (디맥 밀리초 기준)
+    if (targetNote && minDiff <= JUDGE_MS.MAX50) {
+        targetNote.hit = true;
+        
+        if (minDiff <= JUDGE_MS.MAX100) {
+            lastJudgment = "MAX 100%";
+            judgmentColor = "#00fff0";
+            score += 100;
+            combo++;
+        } else if (minDiff <= JUDGE_MS.MAX90) {
+            lastJudgment = "MAX 90%";
+            judgmentColor = "#00ff66";
+            score += 90;
+            combo++;
+        } else {
+            lastJudgment = "MAX 50%";
+            judgmentColor = "#ffaa00";
+            score += 50;
+            combo++;
+        }
+
+        if (combo > maxCombo) maxCombo = combo;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    if (KEYS.includes(key)) {
+        keyState[key] = false;
+    }
+});
+</script>
+
+</body>
+</html>
