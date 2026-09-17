@@ -2,304 +2,277 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>DJMAX Style Smooth Game (FAST/SLOW Added)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>헬프업 (HelpUp) - 스마트 기상 도우미</title>
     <style>
-        body {
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --background: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #4b5563;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            background-color: #0b0b16;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #game-container {
-            position: relative;
-            width: 400px;
-            height: 600px;
-            background-color: #0f0f1e;
-            border: 4px solid #3a3a55;
-            box-shadow: 0 0 20px rgba(0, 255, 240, 0.2);
-        }
-        canvas {
-            display: block;
-        }
-        #ui-info {
-            margin-top: 10px;
-            font-size: 15px;
-            text-align: center;
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
             line-height: 1.6;
+            padding: 20px;
         }
-        .speed-btn {
-            background: #252538;
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: var(--text-light);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"], input[type="time"], select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="time"]:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .range-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary);
             color: white;
-            border: 1px solid #4e4e75;
-            padding: 5px 12px;
+            border: none;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 0 5px;
-            border-radius: 4px;
+            transition: background-color 0.2s;
         }
-        .speed-btn:hover { background: #3b3b5c; }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .result-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .result-time {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--success);
+            margin: 8px 0;
+        }
+
+        .point-badge {
+            display: inline-block;
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
-    </div>
+    <div class="container">
+        <!-- 헤더 -->
+        <header>
+            <h1>HelpUp 🚀</h1>
+            <p>당신의 내일을 위한 스마트 기상 솔루션</p>
+        </header>
 
-    <div id="ui-info">
-        <div>배속 조절: 
-            <button class="speed-btn" onclick="adjustSpeed(-0.5)">-0.5</button>
-            <span id="speed-text">4.0</span>x
-            <button class="speed-btn" onclick="adjustSpeed(0.5)">+0.5</button>
+        <!-- 5. 혜택/포인트 정보 -->
+        <div class="card flex-between">
+            <span>내 현재 포인트</span>
+            <span class="point-badge" id="pointDisplay">🪙 1,200 P</span>
         </div>
-        <div>판정선 싱크 보정 (방향키 <kbd>←</kbd> <kbd>→</kbd>): <strong id="sync-text" style="color: #ffcc00;">0ms</strong></div>
-        <p>게임 시작: <strong style="color: #00fff0;">스페이스바(Space)</strong> | 조작키: <strong>D F J K</strong></p>
+
+        <!-- 1. 오늘 일정 및 숙제 정보 -->
+        <div class="card">
+            <h2>📅 오늘의 요약 정보</h2>
+            <div class="form-group">
+                <label>오늘 하루 일정 / 스케줄</label>
+                <input type="text" value="오후 4시 학원, 저녁 7시 운동" placeholder="일정을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label>남은 숙제량</label>
+                <select id="homework">
+                    <option value="low">적음 (30분 이내)</option>
+                    <option value="medium" selected>보통 (1시간 내외)</option>
+                    <option value="high">많음 (2시간 이상)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 2 & 3. 피로도 및 교통수단 입력 -->
+        <div class="card">
+            <h2>📝 상태 입력하기</h2>
+            <div class="form-group">
+                <label>어제 몇 시에 잠들었나요?</label>
+                <input type="time" id="sleepTime" value="23:30">
+            </div>
+            <div class="form-group">
+                <label>현재 피곤한 정도 (1~5)</label>
+                <div class="range-group">
+                    <span>개운함</span>
+                    <input type="range" id="fatigue" min="1" max="5" value="3">
+                    <span>피곤함</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>학교 갈 때 이용하는 교통수단</label>
+                <select id="transport">
+                    <option value="walk">도보 (예상시간 일정함)</option>
+                    <option value="bus">시내버스 (교통 상황 영향 있음)</option>
+                    <option value="subway">지하철 (정시성 높음)</option>
+                    <option value="car">자가용/택시 (지체 가능성 높음)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 4. 계산 버튼 및 결과 영역 -->
+        <button onclick="calculateWakeUpTime()">적정 기상 시간 계산하기</button>
+
+        <div class="result-box" id="resultBox">
+            <p>💡 분석 완료! 내일 추천하는 기상 시간은</p>
+            <div class="result-time" id="recommendedTime">오전 07:10</div>
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">
+                피로도와 숙제량, 교통수단 가중치를 반영한 시간입니다.
+            </p>
+            <button onclick="claimPoints()" style="background-color: var(--success); font-size: 1rem; padding: 10px;">
+                내일 제시간에 일어나고 100P 받기 예약
+            </button>
+        </div>
     </div>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    <script>
+        function calculateWakeUpTime() {
+            const homework = document.getElementById('homework').value;
+            const fatigue = parseInt(document.getElementById('fatigue').value);
+            const transport = document.getElementById('transport').value;
 
-// --- 게임 설정 및 디맥 판정선 범위 ---
-let speed = 4.0; 
-let audioOffset = 0; 
-const JUDGMENT_LINE_Y = 520; 
-const NOTE_HEIGHT = 18;
-const LANE_WIDTH = 100;
-const KEYS = ['d', 'f', 'j', 'k'];
-const LANE_COLORS = ['#ff4b5c', '#00fff0', '#00fff0', '#ff4b5c'];
+            // 기본 목표 도착 시간 기상 기준 (7시 30분 기본 가정)
+            let baseHour = 7;
+            let baseMinute = 30;
 
-// --- [디맥 사양] 판정 테이블 ---
-const JUDGE_WINDOWS = [
-    { ms: 42,  name: "MAX 100%", color: "#00fff0", rate: 1.0 },
-    { ms: 55,  name: "MAX 90%",  color: "#00ff66", rate: 0.9 },
-    { ms: 68,  name: "MAX 80%",  color: "#22ff44", rate: 0.8 },
-    { ms: 80,  name: "MAX 70%",  color: "#66ff22", rate: 0.7 },
-    { ms: 95,  name: "MAX 50%",  color: "#ffcc00", rate: 0.5 },
-    { ms: 115, name: "MAX 40%",  color: "#ffaa00", rate: 0.4 },
-    { ms: 135, name: "MAX 30%",  color: "#ff8800", rate: 0.3 },
-    { ms: 160, name: "MAX 10%",  color: "#ff4400", rate: 0.1 },
-    { ms: 200, name: "MAX 1%",   color: "#ff2200", rate: 0.01 }
-];
-const BREAK_WINDOW = 220; 
-
-// --- 게임 상태 변수 ---
-let isPlaying = false;
-let startTime = 0;
-let score = 0;
-let totalNotesHit = 0; 
-let totalRateScore = 0; 
-let combo = 0;
-let maxCombo = 0;
-
-// 판정 및 FAST / SLOW 세부 데이터 상태
-let lastJudgment = "";
-let judgmentColor = "white";
-let lastTimingType = ""; // "FAST", "SLOW", "" 값 저장용
-let timingColor = "white";
-
-// 키 입력 상태 및 이펙트 애니메이션 카운터
-let keyState = { d: false, f: false, j: false, k: false };
-let laneEffect = { d: 0, f: 0, j: 0, k: 0 }; 
-
-// --- 채보 데이터 (2키 제한 딜루전 16비트 고속 계단) ---
-const chart = [
-    { time: 1000, lane: 0 }, { time: 1000, lane: 3 },
-    { time: 1500, lane: 1 }, { time: 1500, lane: 2 },
-    { time: 2000, lane: 0 }, { time: 2300, lane: 1 },
-    { time: 2600, lane: 2 }, { time: 2900, lane: 3 },
-    { time: 3500, lane: 0 }, { time: 3500, lane: 2 },
-    { time: 4000, lane: 1 }, { time: 4000, lane: 3 },
-
-    // 고속 16비트 계단 (BPM 180 기준)
-    { time: 5000, lane: 0 }, { time: 5083, lane: 1 }, { time: 5166, lane: 2 }, { time: 5250, lane: 3 },
-    { time: 5333, lane: 2 }, { time: 5416, lane: 1 }, { time: 5500, lane: 0 }, { time: 5583, lane: 1 },
-    { time: 5666, lane: 2 }, { time: 5750, lane: 3 }, { time: 5833, lane: 2 }, { time: 5916, lane: 1 },
-    
-    // 지력 복합 꼬임 계단
-    { time: 6000, lane: 0 }, { time: 6083, lane: 2 }, { time: 6166, lane: 1 }, { time: 6250, lane: 3 },
-    { time: 6333, lane: 0 }, { time: 6416, lane: 2 }, { time: 6500, lane: 1 }, { time: 6583, lane: 3 },
-    
-    { time: 6700, lane: 0 }, { time: 6783, lane: 1 }, { time: 6866, lane: 2 }, { time: 6950, lane: 3 },
-    { time: 7100, lane: 0 }, { time: 7100, lane: 3 }
-];
-
-let playNotes = [];
-
-function startGame() {
-    playNotes = chart.map(note => ({ ...note, hit: false }));
-    score = 0;
-    totalNotesHit = 0;
-    totalRateScore = 0;
-    combo = 0;
-    maxCombo = 0;
-    lastJudgment = "START!";
-    judgmentColor = "#00fff0";
-    lastTimingType = "";
-    isPlaying = true;
-    startTime = performance.now();
-    requestAnimationFrame(gameLoop);
-}
-
-function adjustSpeed(amount) {
-    speed = Math.max(1.0, Math.min(9.0, speed + amount));
-    document.getElementById('speed-text').innerText = speed.toFixed(1);
-}
-
-function adjustOffset(amount) {
-    audioOffset += amount;
-    document.getElementById('sync-text').innerText = (audioOffset > 0 ? "+" : "") + audioOffset + "ms";
-}
-
-// --- 메인 게임 루프 ---
-function gameLoop(timestamp) {
-    if (!isPlaying) return;
-
-    const currentTime = (timestamp - startTime) + audioOffset;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 1. 레인 배경 및 이펙트 렌더링
-    for (let i = 0; i < 4; i++) {
-        const key = KEYS[i];
-        
-        ctx.fillStyle = keyState[key] ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(i * LANE_WIDTH, 0, LANE_WIDTH, canvas.height);
-        
-        if (laneEffect[key] > 0) {
-            let gradient = ctx.createLinearGradient(0, JUDGMENT_LINE_Y, 0, 200);
-            gradient.addColorStop(0, `rgba(0, 255, 240, ${laneEffect[key] * 0.4})`);
-            gradient.addColorStop(1, 'rgba(0, 255, 240, 0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(i * LANE_WIDTH, 200, LANE_WIDTH, JUDGMENT_LINE_Y - 200);
+            // 숙제량에 따른 조절 (많으면 수면 효율 저하 고려하여 기상 조절)
+            if (homework === 'high') baseMinute -= 10;
             
-            laneEffect[key] -= 0.05; 
-        }
-
-        ctx.strokeStyle = '#22223b';
-        ctx.beginPath();
-        ctx.moveTo(i * LANE_WIDTH, 0);
-        ctx.lineTo(i * LANE_WIDTH, canvas.height);
-        ctx.stroke();
-    }
-
-    // 2. 판정선 디자인
-    ctx.fillStyle = '#3a3a55';
-    ctx.fillRect(0, JUDGMENT_LINE_Y, canvas.width, 6);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, JUDGMENT_LINE_Y + 1, canvas.width, 3);
-
-    // 3. 노트 업데이트
-    playNotes.forEach(note => {
-        if (note.hit) return;
-
-        const timeDiff = note.time - currentTime;
-        const y = JUDGMENT_LINE_Y - (timeDiff * 0.15 * speed);
-
-        if (y > -NOTE_HEIGHT && y < canvas.height) {
-            ctx.fillStyle = LANE_COLORS[note.lane];
-            ctx.fillRect(note.lane * LANE_WIDTH + 6, y, LANE_WIDTH - 12, NOTE_HEIGHT);
-            ctx.fillStyle = '#ffffff'; 
-            ctx.fillRect(note.lane * LANE_WIDTH + 14, y + 4, LANE_WIDTH - 28, NOTE_HEIGHT - 8);
-        }
-
-        if (timeDiff < -BREAK_WINDOW) {
-            note.hit = true;
-            combo = 0;
-            totalNotesHit++;
-            lastJudgment = "BREAK";
-            judgmentColor = "#ff0000";
-            lastTimingType = ""; // BREAK는 패스트 슬로우 미표시
-        }
-    });
-
-    // 4. UI 및 텍스트 렌더링
-    ctx.fillStyle = '#8b8baf';
-    ctx.font = '14px Arial';
-    ctx.fillText(`SCORE: ${score}`, 20, 40);
-    ctx.fillText(`MAX COMBO: ${maxCombo}`, 20, 65);
-
-    const currentRate = totalNotesHit > 0 ? ((totalRateScore / totalNotesHit) * 100).toFixed(2) : "100.00";
-    ctx.fillStyle = '#00fff0';
-    ctx.fillText(`RATE: ${currentRate}%`, 20, 90);
-
-    if (combo > 0) {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 32px Arial';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = '#00fff0';
-        ctx.shadowBlur = 10;
-        ctx.fillText(combo, canvas.width / 2, 220);
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#ffcc00';
-        ctx.fillText("COMBO", canvas.width / 2, 245);
-        ctx.shadowBlur = 0; 
-    }
-
-    // 판정 메인 텍스트와 FAST / SLOW 통합 그리기
-    if (lastJudgment) {
-        ctx.textAlign = 'center';
-        
-        // FAST/SLOW 표기가 필요하면 판정 텍스트를 살짝 밀고 나란히 배치
-        if (lastTimingType !== "") {
-            ctx.fillStyle = judgmentColor;
-            ctx.font = 'bold 28px Arial';
-            ctx.fillText(lastJudgment, canvas.width / 2 - 35, 290);
+            // 피로도에 따른 조절 (피곤할수록 밍기적거리는 시간 감안하여 알람 당김)
+            if (fatigue >= 4) baseMinute -= 15;
             
-            ctx.fillStyle = timingColor;
-            ctx.font = 'bold 18px Arial';
-            ctx.fillText(lastTimingType, canvas.width / 2 + 55, 288);
-        } else {
-            // MAX 100% 나 BREAK 일 때는 중앙에 단독 표시
-            ctx.fillStyle = judgmentColor;
-            ctx.font = 'bold 28px Arial';
-            ctx.fillText(lastJudgment, canvas.width / 2, 290);
+            // 교통수단에 따른 조절 (버스는 유동성이 크므로 일찍 일어남)
+            if (transport === 'bus' || transport === 'car') {
+                baseMinute -= 15; 
+            } else if (transport === 'walk') {
+                baseMinute -= 5;
+            }
+
+            // 분 단위 보정
+            if (baseMinute < 0) {
+                baseHour -= 1;
+                baseMinute += 60;
+            }
+
+            const formattedMin = baseMinute < 10 ? '0' + baseMinute : baseMinute;
+            const formattedTime = `오전 0${baseHour}:${formattedMin}`;
+
+            // 결과 노출
+            document.getElementById('recommendedTime').innerText = formattedTime;
+            document.getElementById('resultBox').style.style.display = 'block';
+            document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
         }
-    }
-    ctx.textAlign = 'left';
 
-    // 종료 조건
-    if (playNotes.every(note => note.hit)) {
-        isPlaying = false;
-        ctx.fillStyle = '#00fff0';
-        ctx.font = 'bold 30px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText("STAGE CLEAR", canvas.width / 2, canvas.height / 2 - 20);
-        ctx.font = '20px Arial';
-        ctx.fillText(`최종 정확도: ${currentRate}%`, canvas.width / 2, canvas.height / 2 + 20);
-        ctx.textAlign = 'left';
-        return;
-    }
-
-    requestAnimationFrame(gameLoop);
-}
-
-// --- 키 입력 이벤트 핸들러 ---
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') { adjustOffset(-5); return; }
-    if (e.key === 'ArrowRight') { adjustOffset(5); return; }
-
-    const key = e.key.toLowerCase();
-    if (key === ' ') {
-        if (!isPlaying) startGame();
-        return;
-    }
-
-    if (!KEYS.includes(key) || keyState[key]) return;
-    keyState[key] = true;
-
-    if (!isPlaying) return;
-
-    const rawInputTime = performance.now() - startTime;
-    const inputTime = rawInputTime + audioOffset;
-    const targetLane = KEYS.indexOf(key);
-
-    let targetNote = null;
-    let minDiff = Infinity;
-    let rawDiffSign = 0; // FAST/SLOW 정밀 판정용 부호 변수
-
+        function claimPoints() {
+            alert('⏰ 기상 예약 완료! 내일 제시간에 기상 미션을 성공하면 100 포인트가 확정 지급됩니다.');
+            let currentPoint = parseInt(document.getElementById('pointDisplay').innerText.replace(/[^0-9]/g, ''));
+            document.getElementById('pointDisplay').innerText = `🪙 ${(currentPoint + 100).toLocaleString()} P`;
+        }
+    </script>
+</body>
+</html>
