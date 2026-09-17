@@ -8,26 +8,32 @@
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --background: #f9fafb;
+            --background: #f3f4f6;
             --card-bg: #ffffff;
             --text: #1f2937;
             --text-light: #4b5563;
-            --border: #e5e7eb;
+            --border: #d1d5db;
             --success: #10b981;
+            --note-yellow: #fef08a; /* 포스트잇 느낌의 사람 손때 묻은 컬러 */
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
         }
 
         body {
-            background-color: var(--background);
+            /* 사람이 공책에 펜으로 적어가며 설계한 듯한 모눈종이(Grid) 배경 스타일 */
+            background-color: #fafaf9;
+            background-image: 
+                linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+            background-size: 20px 20px;
             color: var(--text);
             line-height: 1.6;
-            padding: 20px;
+            padding: 30px 20px;
         }
 
         .container {
@@ -37,32 +43,61 @@
 
         header {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 20px 0;
+            margin-bottom: 25px;
+            padding: 10px 0;
         }
 
         header h1 {
             color: var(--primary);
-            font-size: 2.5rem;
+            font-size: 2.8rem;
+            font-weight: 800;
             margin-bottom: 5px;
+            letter-spacing: -1px;
         }
 
         header p {
             color: var(--text-light);
+            font-size: 1.05rem;
+        }
+
+        /* 신규: 서비스 소개용 가이드 박스 (인간적인 포스트잇 메모장 스타일) */
+        .intro-card {
+            background: var(--note-yellow);
+            border: 2px dashed #ca8a04;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.08);
+            transform: rotate(-0.5deg); /* 손으로 직접 붙인 듯한 비뚤어짐 연출 */
+        }
+
+        .intro-card h3 {
+            color: #854d0e;
+            margin-bottom: 8px;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .intro-card p {
+            font-size: 0.95rem;
+            color: #713f12;
+            word-break: keep-all;
         }
 
         .card {
             background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            border: 2px solid #e5e7eb; /* 손으로 그린 듯 도톰한 테두리 */
+            border-radius: 16px;
             padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
 
         .card h2 {
-            font-size: 1.25rem;
-            margin-bottom: 16px;
+            font-size: 1.3rem;
+            margin-bottom: 18px;
             color: var(--primary);
             display: flex;
             align-items: center;
@@ -70,7 +105,7 @@
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         label {
@@ -82,22 +117,27 @@
 
         input[type="text"], input[type="time"], select {
             width: 100%;
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            padding: 12px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
             font-size: 1rem;
             outline: none;
-            transition: border-color 0.2s;
+            background-color: #fbfbfb;
+            transition: all 0.2s;
         }
 
         input[type="text"]:focus, input[type="time"]:focus, select:focus {
             border-color: var(--primary);
+            background-color: #ffffff;
         }
 
         .range-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 10px;
         }
 
         input[type="range"] {
@@ -105,49 +145,53 @@
             accent-color: var(--primary);
         }
 
-        button {
+        .btn-main {
             width: 100%;
             background-color: var(--primary);
             color: white;
             border: none;
-            padding: 14px;
-            font-size: 1.1rem;
+            padding: 16px;
+            font-size: 1.15rem;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: all 0.2s;
         }
 
-        button:hover {
+        .btn-main:hover {
             background-color: var(--primary-hover);
+            transform: translateY(-1px);
         }
 
         .result-box {
             background-color: #f0fdf4;
-            border: 1px solid #bbf7d0;
+            border: 2px solid #bbf7d0;
             color: #166534;
-            padding: 16px;
-            border-radius: 8px;
+            padding: 20px;
+            border-radius: 16px;
             text-align: center;
-            margin-top: 15px;
+            margin-top: 20px;
             display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
         .result-time {
-            font-size: 1.8rem;
-            font-weight: bold;
+            font-size: 2.2rem;
+            font-weight: 800;
             color: var(--success);
-            margin: 8px 0;
+            margin: 10px 0;
         }
 
         .point-badge {
             display: inline-block;
             background-color: #fef3c7;
             color: #92400e;
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            border: 1px solid #fde68a;
         }
 
         .flex-between {
@@ -163,12 +207,23 @@
         <!-- 헤더 -->
         <header>
             <h1>HelpUp 🚀</h1>
-            <p>당신의 내일을 위한 스마트 기상 솔루션</p>
+            <p>인간 중심형 내일 아침 라이프 가이드</p>
         </header>
+
+        <!-- 신규 추가된 무엇을 하는 사이트인지 알려주는 안내판 -->
+        <div class="intro-card">
+            <h3>💡 헬프업(HelpUp)은 어떤 사이트인가요?</h3>
+            <p>
+                매일 밤 "내일 몇 시에 일어나야 지각 안 하지?" 고민하셨나요? 
+                헬프업은 오늘 밤 나의 <strong>남은 숙제량, 오늘의 피로도, 내일 탈 교통수단</strong>을 종합 분석하여 
+                당신이 늦지 않게 일어날 수 있는 <strong>가장 완벽한 기상 시간</strong>을 계산해 주는 스마트 라이프 도우미입니다. 
+                제시간에 기상 미션을 예약하고 성공하면 리워드 포인트도 쌓을 수 있어요!
+            </p>
+        </div>
 
         <!-- 5. 혜택/포인트 정보 -->
         <div class="card flex-between">
-            <span>내 현재 포인트</span>
+            <span style="font-weight: bold;">나의 소중한 포인트</span>
             <span class="point-badge" id="pointDisplay">🪙 1,200 P</span>
         </div>
 
@@ -177,55 +232,55 @@
             <h2>📅 오늘의 요약 정보</h2>
             <div class="form-group">
                 <label>오늘 하루 일정 / 스케줄</label>
-                <input type="text" value="오후 4시 학원, 저녁 7시 운동" placeholder="일정을 입력하세요">
+                <input type="text" value="오후 4시 학원, 저녁 7시 운동" placeholder="오늘 있었던 주요 일정을 적어보세요">
             </div>
             <div class="form-group">
-                <label>남은 숙제량</label>
+                <label>남은 숙제량 및 작업량</label>
                 <select id="homework">
-                    <option value="low">적음 (30분 이내)</option>
-                    <option value="medium" selected>보통 (1시간 내외)</option>
-                    <option value="high">많음 (2시간 이상)</option>
+                    <option value="low">적음 (30분 이내에 끝남!)</option>
+                    <option value="medium" selected>보통 (1시간 내외 걸림)</option>
+                    <option value="high">많음 (2시간 이상.. 밤샘 각)</option>
                 </select>
             </div>
         </div>
 
         <!-- 2 & 3. 피로도 및 교통수단 입력 -->
         <div class="card">
-            <h2>📝 상태 입력하기</h2>
+            <h2>📝 현재 내 상태 기록</h2>
             <div class="form-group">
-                <label>어제 몇 시에 잠들었나요?</label>
+                <label>어제 (혹은 오늘 새벽) 몇 시에 잠들었나요?</label>
                 <input type="time" id="sleepTime" value="23:30">
             </div>
             <div class="form-group">
-                <label>현재 피곤한 정도 (1~5)</label>
+                <label>지금 몸이 피곤한 정도 (1~5)</label>
                 <div class="range-group">
-                    <span>개운함</span>
+                    <span style="font-size: 0.85rem; color: var(--text-light);">쌩쌩함😃</span>
                     <input type="range" id="fatigue" min="1" max="5" value="3">
-                    <span>피곤함</span>
+                    <span style="font-size: 0.85rem; color: var(--text-light);">피곤함😴</span>
                 </div>
             </div>
             <div class="form-group">
-                <label>학교 갈 때 이용하는 교통수단</label>
+                <label>내일 학교(혹은 직장) 갈 때 이용할 교통수단</label>
                 <select id="transport">
-                    <option value="walk">도보 (예상시간 일정함)</option>
-                    <option value="bus">시내버스 (교통 상황 영향 있음)</option>
-                    <option value="subway">지하철 (정시성 높음)</option>
-                    <option value="car">자가용/택시 (지체 가능성 높음)</option>
+                    <option value="walk">뚜벅이 걸음 (소요시간 정밀함)</option>
+                    <option value="bus">시내버스 (차 밀릴 변수 있음)</option>
+                    <option value="subway">지하철 (칼같이 정시 도착)</option>
+                    <option value="car">택시/자가용 (도로 상황 복불복)</option>
                 </select>
             </div>
         </div>
 
         <!-- 4. 계산 버튼 및 결과 영역 -->
-        <button onclick="calculateWakeUpTime()">적정 기상 시간 계산하기</button>
+        <button class="btn-main" onclick="calculateWakeUpTime()">나에게 맞는 기상 시간 분석하기</button>
 
         <div class="result-box" id="resultBox">
-            <p>💡 분석 완료! 내일 추천하는 기상 시간은</p>
+            <p>✍️ 인간적인 빅데이터 분석 완료! 추천 시간은</p>
             <div class="result-time" id="recommendedTime">오전 07:10</div>
-            <p style="font-size: 0.9rem; margin-bottom: 10px;">
-                피로도와 숙제량, 교통수단 가중치를 반영한 시간입니다.
+            <p style="font-size: 0.9rem; margin-bottom: 15px; color: #15803d;">
+                선택하신 피로 밸런스와 교통 수단 밀림 방지 가중치가 적용되었습니다.
             </p>
-            <button onclick="claimPoints()" style="background-color: var(--success); font-size: 1rem; padding: 10px;">
-                내일 제시간에 일어나고 100P 받기 예약
+            <button onclick="claimPoints()" style="background-color: var(--success); color: white; border: none; font-size: 1rem; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold;">
+                내일 기상 성공하고 100P 적립 예약하기
             </button>
         </div>
     </div>
@@ -236,43 +291,27 @@
             const fatigue = parseInt(document.getElementById('fatigue').value);
             const transport = document.getElementById('transport').value;
 
-            // 기본 목표 도착 시간 기상 기준 (7시 30분 기본 가정)
+            // 기본 타겟 기상 기준 (7시 30분 기본 가정)
             let baseHour = 7;
             let baseMinute = 30;
 
-            // 숙제량에 따른 조절 (많으면 수면 효율 저하 고려하여 기상 조절)
+            // 숙제량이 많으면 밍기적거릴 확률 가중치 적용
             if (homework === 'high') baseMinute -= 10;
             
-            // 피로도에 따른 조절 (피곤할수록 밍기적거리는 시간 감안하여 알람 당김)
+            // 피곤할수록 알람을 여러 번 깰 확률 고려해서 당김
             if (fatigue >= 4) baseMinute -= 15;
             
-            // 교통수단에 따른 조절 (버스는 유동성이 크므로 일찍 일어남)
+            // 도로 상황에 따른 변수 제어
             if (transport === 'bus' || transport === 'car') {
                 baseMinute -= 15; 
             } else if (transport === 'walk') {
                 baseMinute -= 5;
             }
 
-            // 분 단위 보정
+            // 분 단위 예외 연산 보정
             if (baseMinute < 0) {
                 baseHour -= 1;
                 baseMinute += 60;
             }
 
             const formattedMin = baseMinute < 10 ? '0' + baseMinute : baseMinute;
-            const formattedTime = `오전 0${baseHour}:${formattedMin}`;
-
-            // 결과 노출
-            document.getElementById('recommendedTime').innerText = formattedTime;
-            document.getElementById('resultBox').style.style.display = 'block';
-            document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function claimPoints() {
-            alert('⏰ 기상 예약 완료! 내일 제시간에 기상 미션을 성공하면 100 포인트가 확정 지급됩니다.');
-            let currentPoint = parseInt(document.getElementById('pointDisplay').innerText.replace(/[^0-9]/g, ''));
-            document.getElementById('pointDisplay').innerText = `🪙 ${(currentPoint + 100).toLocaleString()} P`;
-        }
-    </script>
-</body>
-</html>
