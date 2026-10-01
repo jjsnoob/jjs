@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>헬프업 (HelpUp) - 맞춤형 기상 관리 & 리워드 플랫폼</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --primary-light: #EEF2FF;
+            --secondary: #10B981;
+            --accent: #F59E0B;
+            --bg-dark: #0F172A;
+            --bg-card: #1E293B;
+            --text-main: #F8FAFC;
+            --text-sub: #94A3B8;
+            --border: #334155;
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 60px;
+        }
+
+        /* 헤더 / 내비게이션 */
+        header {
+            width: 100%;
+            max-width: 1100px;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: #6366F1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .point-badge {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+        }
+
+        /* 메인 컨테이너 */
+        main {
+            width: 100%;
+            max-width: 1100px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* 상단 히어로 섹션 */
+        .hero {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius);
+            padding: 35px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .hero-text p {
+            color: var(--text-sub);
+            font-size: 15px;
+        }
+
+        .copy-code-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .copy-code-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* 2컬럼 레이아웃 (폼 & 결과) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        /* 폼 그리드 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #CBD5E1;
+        }
+
+        input, select {
+            background-color: #0F172A;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .submit-btn {
+            grid-column: span 2;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 결과 섹션 (기본 숨김) */
+        #resultContainer {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card {
+            background: linear-gradient(180deg, #1E293B 0%, #111827 100%);
+            border: 2px solid var(--primary);
+        }
+
+        .wake-time-box {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 14px;
+            padding: 25px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .wake-time-box .time {
+            font-size: 52px;
+            font-weight: 800;
+            color: #818CF8;
+            margin: 10px 0;
+            letter-spacing: -1px;
+        }
+
+        .advice-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .advice-item {
+            background-color: #0F172A;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #CBD5E1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .claim-btn {
+            width: 100%;
+            background-color: var(--secondary);
+            color: #042F2E;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .claim-btn:hover {
+            background-color: #059669;
+            color: white;
+        }
+
+        /* 리워드 상점 */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .shop-item {
+            background-color: #0F172A;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .shop-item-title {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .shop-item-price {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .buy-btn {
+            background-color: var(--border);
+            color: var(--text-main);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .buy-btn:hover {
+            background-color: #475569;
+        }
+
+        /* 코드 모달 창 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 800px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            background: #0F172A;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 350px;
+            background: transparent;
+            border: none;
+            color: #A7F3D0;
+            font-family: monospace;
+            resize: none;
+            outline: none;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full-width { grid-column: span 1; }
+            .submit-btn { grid-column: span 1; }
+            .shop-grid { grid-template-columns: 1fr; }
+            .hero { flex-direction: column; gap: 20px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 헤더 -->
+    <header>
+        <div class="logo">
+            <span>⏰</span> 헬프업 (HelpUp)
+        </div>
+        <div class="point-badge">
+            <span>내 포인트:</span>
+            <span id="pointDisplay">0</span> P
+        </div>
+    </header>
+
+    <main>
+        <!-- 히어로 배너 -->
+        <section class="hero">
+            <div class="hero-text">
+                <h1>일어나기 힘든 학생들을 위한<br>맞춤형 기상 분석 & 리워드</h1>
+                <p>일정, 이동시간, 수면패턴, 피로도를 고려한 과학적 기상 시간을 추천받으세요.</p>
+            </div>
+            <button class="copy-code-btn" onclick="openCodeModal()">
+                <span>📋</span> 전체 HTML 코드 복사
+            </button>
+        </section>
+
+        <!-- 입력 폼 섹션 -->
+        <section class="card">
+            <div class="card-title">
+                <span>📝</span> 나의 일과 및 상태 입력
+            </div>
+            <form id="wakeForm" onsubmit="event.preventDefault(); calculateWakeTime();">
+                <div class="form-grid">
+                    
+                    <div class="form-group">
+                        <label for="startTime">일정 시작 시간 (등교 시간)</label>
+                        <select id="startTime" required>
+                            <option value="07:00">오전 07:00</option>
+                            <option value="07:30">오전 07:30</option>
+                            <option value="08:00" selected>오전 08:00 (평균)</option>
+                            <option value="08:30">오전 08:30 (평균)</option>
+                            <option value="09:00">오전 09:00</option>
+                            <option value="09:30">오전 09:30</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="travelTime">이동 소요 시간 (분 단위)</label>
+                        <input type="number" id="travelTime" min="5" max="180" value="25" placeholder="예: 20 (분)" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bedTime">취침 예상 시간 (밤)</label>
+                        <select id="bedTime" required>
+                            <option value="22:00">오후 10:00 (22:00)</option>
+                            <option value="23:00" selected>오후 11:00 (23:00)</option>
+                            <option value="24:00">밤 12:00 (24:00)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fatigue">현재 피로도 (1 ~ 5단계)</label>
+                        <select id="fatigue" required>
+                            <option value="1">1단계 - 아주 개운함</option>
+                            <option value="2">2단계 - 양호함</option>
+                            <option value="3" selected>3단계 - 보통 ( 약간 피곤 )</option>
+                            <option value="4">4단계 - 많이 피곤함</option>
+                            <option value="5">5단계 - 극도로 피곤함</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="homework">오늘 남아있는 공부/숙제량</label>
+                        <select id="homework" required>
+                            <option value="60">소 - 약 1시간 소요</option>
+                            <option value="180" selected>중 - 약 3시간 소요</option>
+                            <option value="360">대 - 약 6시간 소요</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="submit-btn">💡 최적 기상 시간 및 분석 결과 보기</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- 결과 출력 카드리스트 (초기 숨김) -->
+        <section id="resultContainer" class="card result-card">
+            <div class="card-title">
+                <span>🎯</span> 헬프업 맞춤 기상 분석 결과
+            </div>
+
+            <div class="wake-time-box">
+                <div>추천 기상 시간</div>
+                <div class="time" id="recommendedTime">07:05 AM</div>
+                <p id="totalSleepText" style="color: #94A3B8; font-size: 14px;"></p>
+            </div>
+
+            <ul class="advice-list">
+                <li class="advice-item" id="prepAdvice">이동시간과 준비시간이 고려되었습니다.</li>
+                <li class="advice-item" id="sleepAdvice">수면 권장사항이 적용되었습니다.</li>
+                <li class="advice-item" id="homeworkAdvice">공부량에 따른 취침 스케줄입니다.</li>
+            </ul>
+
+            <button class="claim-btn" onclick="claimReward()">✨ 정시 기상 성공 인증하고 +100P 받기</button>
+        </section>
+
+        <!-- 리워드 상점 -->
+        <section class="card">
+            <div class="card-title">
+                <span>🎁</span> 헬프업 포인트 상점
+            </div>
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-title">학교 매점 1,000원 쿠폰</div>
+                        <div class="shop-item-price">1,000 P</div>
+                    </div>
+                    <button class="buy-btn" onclick="buyItem(1000, '매점 쿠폰')">교환하기</button>
+                </div>
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-title">주말 게임 자유 1시간권</div>
+                        <div class="shop-item-price">500 P</div>
+                    </div>
+                    <button class="buy-btn" onclick="buyItem(500, '게임 자유 1시간권')">교환하기</button>
+                </div>
+                <div class="shop-item">
+                    <div>
+                        <div class="shop-item-title">편의점 3,000원 금액권</div>
+                        <div class="shop-item-price">3,000 P</div>
+                    </div>
+                    <button class="buy-btn" onclick="buyItem(3000, '편의점 금액권')">교환하기</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- HTML 코드 복사 모달 -->
+    <div id="codeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📋 헬프업(HelpUp) 전체 HTML 소스 코드</h3>
+                <button class="close-btn" onclick="closeCodeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="codeTextarea" readonly></textarea>
+            </div>
+            <button class="copy-code-btn" style="width: 100%; justify-content: center;" onclick="copyToClipboard()">
+                코드 전체 클립보드에 복사하기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let userPoints = 0;
+
+        // 현실적인 기상 시간 계산 로직
+        function calculateWakeTime() {
+            const startTimeStr = document.getElementById('startTime').value;
+            const travelTime = parseInt(document.getElementById('travelTime').value) || 20;
+            const bedTimeStr = document.getElementById('bedTime').value;
+            const fatigue = parseInt(document.getElementById('fatigue').value);
+            const homeworkMinutes = parseInt(document.getElementById('homework').value);
+
+            // 일정 시작시간을 분(minute)으로 변환
+            const [startHour, startMin] = startTimeStr.split(':').map(Number);
+            const startTotalMinutes = startHour * 60 + startMin;
+
+            // 아침 준비시간: 기본 25분 + (피로도 1점당 3분 추가 여유시간)
+            const prepTime = 25 + (fatigue * 3);
+
+            // 기상 필요 시간 = 등교시간 - 이동시간 - 준비시간
+            let wakeTotalMinutes = startTotalMinutes - travelTime - prepTime;
+            if (wakeTotalMinutes < 0) wakeTotalMinutes += 24 * 60;
+
+            const wakeHour = Math.floor(wakeTotalMinutes / 60);
+            const wakeMin = wakeTotalMinutes % 60;
+
+            // 포맷팅
+            const formattedWakeTime = `${String(wakeHour).padStart(2, '0')}:${String(wakeMin).padStart(2, '0')}`;
+            document.getElementById('recommendedTime').innerText = `오전 ${formattedWakeTime}`;
+
+            // 취침시간 계산 및 수면시간 계산
+            const bedHour = parseInt(bedTimeStr.split(':')[0]);
+            let sleepHours = (wakeHour + 24) - bedHour;
+            if (sleepHours >= 24) sleepHours -= 24;
+            const sleepMinutes = Math.abs(wakeMin);
+
+            document.getElementById('totalSleepText').innerText = `예상 수면시간: 약 ${sleepHours}시간 ${sleepMinutes}분`;
+
+            // 맞춤 조언 세팅
+            document.getElementById('prepAdvice').innerText = 
+                `⏱️ 등교 이동시간 (${travelTime}분) + 여유 준비시간 (${prepTime}분)을 고려한 기상 시간입니다.`;
+
+            if (sleepHours < 7) {
+                document.getElementById('sleepAdvice').innerText = 
+                    `⚠️ 수면 시간이 다소 부족합니다. (${sleepHours}시간) 등교 후 피로가 몰려올 수 있으니 취침 시간을 당기는 것을 추천합니다.`;
+            } else {
+                document.getElementById('sleepAdvice').innerText = 
+                    `✅ 적절한 권장 수면시간(${sleepHours}시간)이 확보되어 상쾌한 아침을 맞이할 수 있습니다.`;
+            }
+
+            document.getElementById('homeworkAdvice').innerText = 
+                `📚 오늘 남은 공부량(${homeworkMinutes / 60}시간)을 마치려면 취침 전까지 집중해서 완료해야 합니다.`;
+
+            // 결과창 디스플레이
+            const resultBox = document.getElementById('resultContainer');
+            resultBox.style.display = 'block';
+            resultBox.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 리워드 적립
+        function claimReward() {
+            userPoints += 100;
+            document.getElementById('pointDisplay').innerText = userPoints;
+            alert('🎉 기상 성공 인증 완료! 100 포인트가 적립되었습니다.');
+        }
+
+        // 포인트 상품 구매
+        function buyItem(price, itemName) {
+            if (userPoints >= price) {
+                userPoints -= price;
+                document.getElementById('pointDisplay').innerText = userPoints;
+                alert(`🎁 [${itemName}] 교환에 성공했습니다! (남은 포인트: ${userPoints}P)`);
+            } else {
+                alert(`❌ 포인트가 부족합니다. (필요 포인트: ${price}P / 보유: ${userPoints}P)`);
+            }
+        }
+
+        // 코드 모달 관련
+        function openCodeModal() {
+            document.getElementById('codeTextarea').value = document.documentElement.outerHTML;
+            document.getElementById('codeModal').style.display = 'flex';
+        }
+
+        function closeCodeModal() {
+            document.getElementById('codeModal').style.display = 'none';
+        }
+
+        function copyToClipboard() {
+            const textarea = document.getElementById('codeTextarea');
+            textarea.select();
+            document.execCommand('copy');
+            alert('📋 전체 HTML 코드가 클립보드에 복사되었습니다!');
+        }
+    </script>
+</body>
+</html>
